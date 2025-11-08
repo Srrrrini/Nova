@@ -1,0 +1,12 @@
+node_modules
+.env
+.env.*
+dist
+.client
+server/__pycache__
+.mypy_cache
+.idea
+.vscode
+.modal
+.sqlite*
+.DS_Store

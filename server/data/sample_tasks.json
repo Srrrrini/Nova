@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Ingest customer feedback",
+    "description": "Aggregate historical customer feedback for prompt grounding.",
+    "owner": "Ada",
+    "depends_on": []
+  },
+  {
+    "name": "Train dependency agent",
+    "description": "Use OpenRouter Claude 3.5 to extract cross-team dependencies.",
+    "owner": "Grace",
+    "depends_on": ["Ingest customer feedback"]
+  },
+  {
+    "name": "Deploy Modal backend",
+    "description": "Package FastAPI + Agentuity stack as Modal function.",
+    "owner": "Linus",
+    "depends_on": ["Train dependency agent"]
+  }
+]

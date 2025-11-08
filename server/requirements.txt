@@ -1,0 +1,9 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+modal==0.61.142
+httpx==0.27.2
+agentuity==0.2.1
+pydantic==2.9.2
+sqlalchemy==2.0.35
+python-multipart==0.0.9
+orjson==3.10.7
