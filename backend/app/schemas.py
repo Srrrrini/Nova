@@ -68,6 +68,7 @@ class PlanningRecord(BaseModel):
     plan: Optional[PlanningPlan] = None
     agentJobId: Optional[str] = None
     error: Optional[str] = None
+    prompt: Optional[str] = None
 
 
 class PlanningResponse(BaseModel):
@@ -76,4 +77,6 @@ class PlanningResponse(BaseModel):
     plan: Optional[PlanningPlan] = None
     agentJobId: Optional[str] = None
     error: Optional[str] = None
+    transcript: Optional[str] = None
+    prompt: Optional[str] = None
 

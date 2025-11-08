@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { MeetingSummary } from '../types/meeting';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import type { MeetingContextPayload, PlanningResponse } from '../types/plan';
+import { planResponseToMeeting } from '../utils/planTransform';
 
 interface HomeProps {
   meetings: MeetingSummary[];
@@ -9,10 +11,48 @@ interface HomeProps {
   onViewTasks: () => void;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+const DEFAULT_PROJECT = {
+  name: 'Flask 3.1 Stability Sprint',
+  repositoryUrl: 'https://github.com/pallets/flask',
+  goal: 'Improve authentication stability and documentation ahead of the 3.1 release'
+};
+
+const DEFAULT_PARTICIPANTS = [
+  { name: 'Alice Chen', role: 'Engineering Manager' },
+  { name: 'Bob Martinez', role: 'Backend Engineer' },
+  { name: 'Priya Patel', role: 'DevOps Engineer' },
+  { name: 'Jonas Meyer', role: 'Technical Writer' }
+];
+
+const DEFAULT_ISSUES = [
+  {
+    id: 'ISSUE-123',
+    title: 'Session refresh fails on production',
+    url: 'https://github.com/pallets/flask/issues/5390'
+  },
+  {
+    id: 'ISSUE-341',
+    title: 'Update deployment docs for container workflow',
+    url: 'https://github.com/pallets/flask/issues/5143'
+  },
+  {
+    id: 'ISSUE-487',
+    title: 'Document new secure cookie defaults',
+    url: 'https://github.com/pallets/flask/issues/4910'
+  }
+];
 
 export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, onViewTasks }: HomeProps) {
-  const { recording, audioUrl, audioBlob, error: audioError, startRecording, stopRecording } = useAudioRecorder();
+  const { recording, audioUrl: recordedAudioUrl, audioBlob: recordedAudioBlob, error: audioError, startRecording, stopRecording } = useAudioRecorder();
+  const [defaultAudioUrl, setDefaultAudioUrl] = useState<string | null>(null);
+  const [defaultAudioBlob, setDefaultAudioBlob] = useState<Blob | null>(null);
+  
+  // Use default audio if no recorded audio exists
+  const audioUrl = recordedAudioUrl || defaultAudioUrl;
+  const audioBlob = recordedAudioBlob || defaultAudioBlob;
+  
   const assignedTasks = meetings.flatMap((meeting) => meeting.tasks).slice(0, 3);
   const today = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
   const [openMeeting, setOpenMeeting] = useState<MeetingSummary | null>(null);
@@ -47,6 +87,32 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
     });
   }, [meetings]);
 
+  // Load default audio file on mount
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    const loadDefaultAudio = async () => {
+      try {
+        const response = await fetch('/project_recording.mp3');
+        if (response.ok) {
+          const blob = await response.blob();
+          objectUrl = URL.createObjectURL(blob);
+          setDefaultAudioBlob(blob);
+          setDefaultAudioUrl(objectUrl);
+          console.log('[audio] loaded default audio file');
+        }
+      } catch (err) {
+        console.warn('[audio] default audio file not found, will use recording:', err);
+      }
+    };
+    loadDefaultAudio();
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, []);
+
   const handleTitleBlur = (meetingId: string, fallback: string, value?: string | null) => {
     setDraftSummaries((prev) => ({
       ...prev,
@@ -65,19 +131,45 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
     setAnalyzingMeeting(true);
     setAnalysisError(null);
     try {
+      // Use a consistent meeting ID based on today's date so it saves to the same file
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const meetingId = `sp-${dateStr}`;
+      const contextPayload: MeetingContextPayload = {
+        meetingId,
+        project: DEFAULT_PROJECT,
+        participants: DEFAULT_PARTICIPANTS,
+        issues: DEFAULT_ISSUES
+      };
+
       const form = new FormData();
-      form.append('meeting_audio', audioBlob, 'meeting.webm');
+      form.append('meeting_audio', audioBlob, `meeting-${meetingId}.webm`);
+      form.append('context', JSON.stringify(contextPayload));
+
+      console.log('[meeting] submitting analysis request', {
+        meetingId,
+        audioBytes: audioBlob.size,
+        context: contextPayload
+      });
       const res = await fetch(`${API_BASE}/meetings/analyze`, {
         method: 'POST',
         body: form
       });
       if (!res.ok) {
-        throw new Error('Failed to analyze meeting');
+        const errorText = await res.text();
+        throw new Error(errorText || 'Failed to analyze meeting');
       }
-      const data = (await res.json()) as { meeting: MeetingSummary };
-      onMeetingGenerated(data.meeting);
-      onReviewMeeting(data.meeting.id);
+      const planning = (await res.json()) as PlanningResponse;
+      console.log('[meeting] analysis response received', {
+        meetingId: planning.meetingId,
+        status: planning.status,
+        agentJobId: planning.agentJobId
+      });
+      const meetingSummary = planResponseToMeeting(planning, contextPayload);
+      onMeetingGenerated(meetingSummary);
+      onReviewMeeting(meetingSummary.id);
     } catch (err) {
+      console.error('[meeting] analysis request failed', err);
       setAnalysisError((err as Error).message);
     } finally {
       setAnalyzingMeeting(false);
@@ -262,6 +354,23 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
                       }
                     />
                   </label>
+
+                  {openMeeting.transcript && (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-sm text-slate-600">
+                      <p className="font-semibold text-slate-500">Transcript</p>
+                      <p className="mt-2 whitespace-pre-wrap text-slate-600">{openMeeting.transcript}</p>
+                    </div>
+                  )}
+                  {openMeeting.prompt && (
+                    <details className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                      <summary className="cursor-pointer font-semibold text-slate-500">
+                        LLM Prompt (debug)
+                      </summary>
+                      <pre className="mt-2 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-600">
+                        {openMeeting.prompt}
+                      </pre>
+                    </details>
+                  )}
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
                     <p className="font-semibold text-slate-500">Tasks linked</p>
                     <ul className="mt-1 list-disc pl-4">

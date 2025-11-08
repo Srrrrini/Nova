@@ -3,8 +3,6 @@ import sampleMeetings from '../mock/sampleMeetings';
 import type { MeetingSummary } from '../types/meeting';
 import type { TaskNode } from '../types/project';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
-
 interface MeetingsResponse {
   meetings: MeetingSummary[];
   tasks: TaskNode[];
@@ -24,34 +22,7 @@ export function useMeetingsData() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-    async function fetchMeetings() {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_BASE}/meetings`);
-        if (!res.ok) {
-          throw new Error('Failed to load meetings');
-        }
-        const data = (await res.json()) as MeetingsResponse;
-        if (isMounted) {
-          setMeetings(data.meetings);
-          setTasks(data.tasks);
-          setError(null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError((err as Error).message);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-    fetchMeetings();
-    return () => {
-      isMounted = false;
-    };
+    setLoading(false);
   }, []);
 
   const addMeeting = useCallback((meeting: MeetingSummary) => {

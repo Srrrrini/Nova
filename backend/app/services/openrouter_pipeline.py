@@ -20,9 +20,15 @@ class OpenRouterPlanningPipeline:
     def __init__(self, client: OpenRouterClient, searcher: GitHubCodeSearcher | None = None) -> None:
         self._client = client
         self._searcher = searcher or GitHubCodeSearcher()
+        self._last_prompt: str | None = None
+
+    @property
+    def last_prompt(self) -> str | None:
+        return self._last_prompt
 
     def generate_plan(self, context: MeetingContext) -> PlanningPlan:
         combined_prompt = self._build_combined_prompt(context)
+        self._last_prompt = combined_prompt
         plan_json = self._call_text(
             combined_prompt,
             temperature=0.3,

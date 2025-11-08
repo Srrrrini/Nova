@@ -22,6 +22,7 @@ class PlanningRepository:
                 existing.agentJobId = agent_job_id or existing.agentJobId
                 existing.error = None
                 existing.plan = None
+                existing.prompt = None
                 record = existing
             else:
                 record = PlanningRecord(
@@ -35,7 +36,12 @@ class PlanningRepository:
         return record
 
     def set_plan_result(
-        self, meeting_id: str, plan: Optional[PlanningPlan], error: Optional[str] = None
+        self,
+        meeting_id: str,
+        plan: Optional[PlanningPlan],
+        *,
+        error: Optional[str] = None,
+        prompt: Optional[str] = None,
     ) -> Optional[PlanningRecord]:
         with self._lock:
             record = self._records.get(meeting_id)
@@ -45,10 +51,12 @@ class PlanningRepository:
                 record.status = PlanStatus.failed
                 record.error = error
                 record.plan = None
+                record.prompt = prompt
             else:
                 record.status = PlanStatus.ready
                 record.plan = plan
                 record.error = None
+                record.prompt = prompt
         return record
 
     def get(self, meeting_id: str) -> Optional[PlanningRecord]:

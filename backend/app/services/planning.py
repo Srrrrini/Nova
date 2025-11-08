@@ -33,23 +33,33 @@ class PlanningService:
     def submit_plan(self, context: MeetingContext) -> PlanningResponse:
         job_id = str(uuid.uuid4())
         record = self._repository.upsert_context(context, agent_job_id=job_id)
+        prompt: str | None = None
         try:
             plan = self._pipeline.generate_plan(context)
-            self._repository.set_plan_result(context.meetingId, plan)
+            prompt = self._pipeline.last_prompt
+            self._repository.set_plan_result(context.meetingId, plan, prompt=prompt)
             record.plan = plan
             record.status = PlanStatus.ready
+            record.prompt = prompt
+            record.error = None
         except Exception as exc:  # pragma: no cover - rely on runtime logging/handling
             error_message = str(exc)
-            self._repository.set_plan_result(context.meetingId, None, error=error_message)
+            prompt = self._pipeline.last_prompt
+            self._repository.set_plan_result(
+                context.meetingId, None, error=error_message, prompt=prompt
+            )
             record.status = PlanStatus.failed
             record.plan = None
             record.error = error_message
+            record.prompt = prompt
         response = PlanningResponse(
             meetingId=record.meetingId,
             status=record.status,
             plan=record.plan,
             agentJobId=record.agentJobId,
             error=record.error,
+            transcript=context.transcript,
+            prompt=prompt,
         )
         self._persist_response(response)
         return response
@@ -65,6 +75,8 @@ class PlanningService:
             plan=record.plan,
             agentJobId=record.agentJobId,
             error=record.error,
+            transcript=record.context.transcript,
+            prompt=record.prompt,
         )
         self._persist_response(response)
         return response

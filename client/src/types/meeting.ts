@@ -11,4 +11,6 @@ export interface MeetingSummary {
   resources: string[];
   hours: number;
   cost: number;
+  transcript?: string;
+  prompt?: string;
 }

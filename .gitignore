@@ -11,7 +11,7 @@ node_modules
 *.code-workspace
 
 # Byte-compiled / cache
-__pycache__/
+__pycache__/Yp to 
 server/__pycache__
 *.py[cod]
 .mypy_cache
