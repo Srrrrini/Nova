@@ -6,16 +6,8 @@ interface SummaryCardsProps {
 
 export default function SummaryCards({ analysis }: SummaryCardsProps) {
   if (!analysis) {
-    return (
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-dashed border-slate-200 p-6 text-slate-400">
-          Run an analysis to see staffing insights.
-        </div>
-      </div>
-    );
+    return null;
   }
-
-  const { summary, employees } = analysis;
 
   return (
     <div className="grid gap-4 md:grid-cols-3">

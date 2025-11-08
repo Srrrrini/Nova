@@ -11,7 +11,6 @@ interface TabItem {
 const tabs: TabItem[] = [
   { key: 'tasks', label: 'Tasks' },
   { key: 'dependencies', label: 'Dependencies' },
-  { key: 'reports', label: 'Reports' }
 ];
 
 interface TabsProps {

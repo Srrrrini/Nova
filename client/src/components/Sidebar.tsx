@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import type { ReactNode } from 'react';
 
-type NavKey = 'dashboard' | 'tasks';
+type NavKey = 'home' | 'dashboard' | 'tasks';
 
 interface SidebarProps {
   active: NavKey;
@@ -10,12 +10,22 @@ interface SidebarProps {
 
 const navItems: { key: NavKey; label: string; icon: ReactNode }[] = [
   {
-    key: 'dashboard',
-    label: 'Dashboard',
+    key: 'home',
+    label: 'Home',
     icon: (
       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M3 12l9-9 9 9" />
         <path d="M9 21V9h6v12" />
+      </svg>
+    )
+  },
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    icon: (
+      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
       </svg>
     )
   },
@@ -39,9 +49,16 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
   return (
     <aside className="hidden w-72 flex-col justify-between border-r border-slate-200 bg-white px-6 py-8 shadow-lg lg:flex">
       <div>
-        <div className="flex items-center gap-2 text-2xl font-semibold text-slate-900">
-          <span className="h-3 w-3 rounded-full bg-indigo-500" />
-          <span>Agentic Planner</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 text-2xl font-bold text-slate-900">
+            <span className="h-3 w-3 rounded-full bg-indigo-500" />
+            <span className="h-3 w-3 rounded-full bg-pink-400" />
+            <span className="h-3 w-3 rounded-full bg-amber-400" />
+          </div>
+          <div>
+            <p className="text-xl font-semibold text-slate-900">Agentic Planner</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Dashboard</p>
+          </div>
         </div>
         <div className="mt-8 flex flex-col items-center gap-2 text-center">
           <img
@@ -72,7 +89,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
       </div>
       <div className="rounded-3xl bg-gradient-to-r from-indigo-500 to-blue-500 p-4 text-sm text-white">
         <p className="font-semibold">Pro tip</p>
-        <p className="text-xs text-indigo-50">Upload meeting notes and repos to auto-build timelines.</p>
+        <p className="text-xs text-indigo-50">Tap meeting titles or attendees to tweak the AI summary on the fly.</p>
       </div>
     </aside>
   );

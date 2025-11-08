@@ -1,6 +1,12 @@
-import sampleTasks from '../mock/sampleResponse';
+import { meetings } from '../mock/sampleMeetings';
+import type { TaskNode } from '../types/project';
 
-const tasks = sampleTasks.tasks;
+const tasks: TaskNode[] = Array.from(
+  meetings.reduce((acc, meeting) => {
+    meeting.tasks.forEach((task) => acc.set(task.id, task));
+    return acc;
+  }, new Map<string, TaskNode>()).values()
+);
 
 export default function TaskList() {
   return (

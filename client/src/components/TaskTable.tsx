@@ -1,7 +1,7 @@
 import type { RawTaskInput, TaskNode } from '../types/project';
 
 interface TaskTableProps {
-  parsedTasks: RawTaskInput[];
+  parsedTasks: (RawTaskInput | TaskNode)[];
   enrichedTasks: TaskNode[];
 }
 
