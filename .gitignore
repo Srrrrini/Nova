@@ -1,5 +1,9 @@
 # Python virtual environments
 .venv/
+venv
+
+# Node modules
+node_modules
 
 # IDE artifacts
 .vscode/
@@ -8,15 +12,22 @@
 
 # Byte-compiled / cache
 __pycache__/
+server/__pycache__
 *.py[cod]
+.mypy_cache
 
 # Logs
 *.log
 
 # Env files
 .env
+.env.*
+
+# Generated artifacts
+.client
+.modal
+.sqlite*
 
 # OS junk
 Thumbs.db
 .DS_Store
-

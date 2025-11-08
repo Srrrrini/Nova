@@ -1,0 +1,7 @@
+{
+  "employees": [
+    {"name": "Ada Lovelace", "skills": ["backend", "python", "ml"], "level": "senior"},
+    {"name": "Grace Hopper", "skills": ["frontend", "react", "testing"], "level": "senior"},
+    {"name": "Alan Turing", "skills": ["systems", "rust", "infra"], "level": "mid"}
+  ]
+}
