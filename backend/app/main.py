@@ -1,8 +1,12 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, status
 
 from .repository import PlanningRepository
 from .schemas import MeetingContext, PlanningResponse
-from .services.agentuity import AgentuityClient
+from .services.openrouter_client import OpenRouterClient
+from .services.openrouter_pipeline import OpenRouterPlanningPipeline
 from .services.planning import PlanningService
 
 
@@ -10,26 +14,28 @@ def get_repository() -> PlanningRepository:
     return _repository
 
 
-def get_agentuity_client() -> AgentuityClient:
-    return _agent_client
+def get_openrouter_pipeline() -> OpenRouterPlanningPipeline:
+    return _pipeline
 
 
 def get_planning_service(
     repository: PlanningRepository = Depends(get_repository),
-    agentuity_client: AgentuityClient = Depends(get_agentuity_client),
+    pipeline: OpenRouterPlanningPipeline = Depends(get_openrouter_pipeline),
 ) -> PlanningService:
-    return PlanningService(repository=repository, agent_client=agentuity_client)
+    return PlanningService(repository=repository, pipeline=pipeline)
 
+
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env", override=False)
 
 _repository = PlanningRepository()
-_agent_client = AgentuityClient()
-
+_openrouter_client = OpenRouterClient()
+_pipeline = OpenRouterPlanningPipeline(client=_openrouter_client)
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Nova Sprint Planning Backend",
         version="0.1.0",
-        description="Receives meeting context and coordinates sprint planning via Agentuity agents.",
+        description="Receives meeting context and coordinates sprint planning through OpenRouter prompts.",
     )
 
     @app.get("/health", tags=["health"])

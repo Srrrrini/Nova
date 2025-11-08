@@ -1,17 +1,21 @@
+projectId: proj_89bac4aac64faef1d98b236cf76fe4b1
 agents:
   - id: context_summarizer
+    agentuityId: agent_b65744066a5617629b92f53723dc9c93
     name: Context Summarizer
     goal: Summarize key decisions, action items, and risks from the meeting transcript.
     tools:
       - transcript_chunker
       - knowledge_base_lookup
   - id: repo_strategist
+    agentuityId: agent_6525f3f23745556f6d32b257d4416902
     name: Repo Strategist
     goal: Map actionable items to code areas and issues in the repository.
     tools:
       - github_search
       - issue_tracker
   - id: milestone_planner
+    agentuityId: agent_541d503fc11c18de74defde30f30cdef
     name: Milestone Planner
     goal: Produce milestones, assignments, and timelines based on team roster and tasks.
     tools:
@@ -26,4 +30,3 @@ workflow:
     - agent: milestone_planner
       consumes: [technical_tasks, code_areas, roster, risks]
       provides: [milestones, assignments, timelines]
-

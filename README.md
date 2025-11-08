@@ -1,6 +1,6 @@
 # Nova Sprint Planning Backend
 
-This repository contains a backend prototype that receives sprint planning meeting data from a frontend, coordinates with Agentuity agents, and returns structured plans (milestones, assignments, timelines).
+This repository contains a backend prototype that receives sprint planning meeting data from a frontend, orchestrates a series of OpenRouter prompts, and returns structured plans (milestones, assignments, timelines).
 
 ## Project Layout
 
@@ -8,7 +8,7 @@ This repository contains a backend prototype that receives sprint planning meeti
   - `app/main.py` – FastAPI app and routing
   - `app/schemas.py` – Pydantic models for requests and responses
   - `app/repository.py` – In-memory storage for meeting plans
-  - `app/services/` – Agentuity client stub and planning orchestration
+  - `app/services/` – OpenRouter client, prompt pipeline, and planning orchestration
 - `docs/backend-design.md` – High-level architecture and API contract
 
 ## Getting Started
@@ -35,15 +35,29 @@ This repository contains a backend prototype that receives sprint planning meeti
 
 4. Open the interactive docs at `http://127.0.0.1:8000/docs` to exercise the endpoints.
 
-5. (Optional) Configure Agentuity integration by setting environment variables before starting the server:
+5. Configure OpenRouter access by exporting the required variables before starting the server:
 
    ```powershell
-   $env:AGENTUITY_API_URL = "https://api.agentuity.example.com"
-   $env:AGENTUITY_API_KEY = "<your-api-key>"
+   $env:OPENROUTER_API_KEY = "<your-openrouter-api-key>"
+   # Optional overrides:
+   # $env:OPENROUTER_MODEL = "anthropic/claude-3-haiku"
+   # $env:OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+   # $env:OPENROUTER_TIMEOUT = "120"  # seconds
+   # $env:OPENROUTER_RETRIES = "3"   # number of attempts per request
    uvicorn app.main:app --reload
    ```
 
-   Without these variables the backend uses a deterministic stubbed plan for local development.
+   Without a valid `OPENROUTER_API_KEY` the server will refuse to start, ensuring calls never leave your environment unexpectedly.
+
+6. (Optional) Provide a GitHub personal access token if you want the planner to search code within the repository referenced by the meeting payload. The token only needs `contents` scope:
+
+   ```powershell
+   $env:GITHUB_TOKEN = "<github-personal-access-token>"
+   ```
+
+   Without it, code search falls back to best-effort heuristics using public API limits.
+
+7. Each completed request persists the latest planning response as JSON under `backend/data/plans/{meetingId}.json` so the output can be inspected or shared later.
 
 ## Sample Usage
 
@@ -53,16 +67,21 @@ curl -X POST http://127.0.0.1:8000/api/v1/meetings/sp-2025-11-08/plan `
   -d @{
     meetingId = "sp-2025-11-08"
     project = @{
-      name = "Nova Meeting Planner"
-      repositoryUrl = "https://github.com/example/repo"
+      name = "Flask 3.1 Stability Sprint"
+      repositoryUrl = "https://github.com/pallets/flask"  # GitHub repo scanned for code context
+      goal = "Improve authentication stability and documentation ahead of the 3.1 release"
     }
     participants = @(
-      @{ name = "Alex"; role = "Tech Lead" },
-      @{ name = "Priya"; role = "Backend Engineer" }
+      @{ name = "Alice Chen"; role = "Engineering Manager" },
+      @{ name = "Bob Martinez"; role = "Backend Engineer" },
+      @{ name = "Priya Patel"; role = "DevOps Engineer" },
+      @{ name = "Jonas Meyer"; role = "Tech Writer" }
     )
-    transcript = "Sprint planning discussion transcript..."
+    transcript = "Alice: Let's align on sprint focus: shipping the 3.1 authentication fixes and tightening docs. Bob: Login failures were traced to the blueprint auth middleware; we need to refactor session refresh logic in flask/sessions.py and add regression tests. Priya: Deployment playbooks still reference the legacy WSGI config—I'll update the container recipe and CI workflow. Jonas: Docs need a migration note for the new session cookie flags, plus guidance for extensions."
     issues = @(
-      @{ id = "123"; title = "Improve sprint planning automation" }
+      @{ id = "ISSUE-123"; title = "Session refresh fails on production"; url = "https://github.com/pallets/flask/issues/5390" },
+      @{ id = "ISSUE-341"; title = "Update deployment docs for container workflow"; url = "https://github.com/pallets/flask/issues/5143" },
+      @{ id = "ISSUE-487"; title = "Document new secure cookie defaults"; url = "https://github.com/pallets/flask/issues/4910" }
     )
   } | ConvertTo-Json -Compress
 ```
@@ -75,7 +94,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/meetings/sp-2025-11-08/plan `
 
 ## Next Steps
 
-- Replace the Agentuity client stub with real API calls.
+- Tune prompt templates for specific domains (e.g. mobile, data infra).
 - Introduce persistent storage (PostgreSQL/Redis) for meeting plans.
-- Add background job processing or webhooks for asynchronous agent updates.
+- Add streaming responses or background execution for long-running prompt chains.
 - Enforce authentication/authorization between the frontend and backend.

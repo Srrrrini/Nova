@@ -2,7 +2,7 @@
 
 ### Goals
 - Accept structured meeting context from the frontend (participants, roles, project metadata, transcript, GitHub context).
-- Orchestrate planning workflows by delegating heavy analysis to external Agentuity agents.
+- Orchestrate planning workflows by delegating heavy analysis to a programmable chain of OpenRouter prompts.
 - Persist lightweight planning artefacts (meeting summary, milestones, assignments) in memory for now so the frontend can fetch the result.
 
 ### High-Level Flow
@@ -11,9 +11,14 @@
    - Participants with roles.
    - Full transcript text (or URL to transcript).
 2. Backend validates the payload, normalises transcript, and stores an in-memory record keyed by `meetingId`.
-3. Planning service composes a job payload (meeting context + Agentuity workflow) and submits it via the Agentuity Client (`/jobs` endpoint when available).
-4. Agentuity runs the configured agents; once the job finishes the backend polls `GET /jobs/{jobId}` to collect the structured plan.
-5. Backend persists the latest plan in memory and returns it to the caller. Future iterations can move this to a database or webhook-based updates.
+3. Planning service executes a six-step OpenRouter pipeline that:
+   - Summarises the meeting,
+   - Identifies risks,
+   - Drafts action items,
+   - Gathers GitHub code context (when a `repositoryUrl` is provided) and maps work to code areas,
+   - Proposes milestones,
+   - Composes a final `PlanningPlan` JSON structure.
+4. Backend persists the latest plan in memory and returns it to the caller. Future iterations can move this to a database or background processing if prompt latency becomes an issue.
 
 ### API Contract (initial draft)
 
@@ -48,7 +53,7 @@ Response body:
 }
 ```
 
-The request returns immediately while the agent works. Later requests can fetch the generated plan once ready.
+The request runs synchronously. If the prompt chain completes successfully the response contains the finished plan; otherwise it reports `status: "failed"` with an error message.
 
 #### Fetch Plan
 `GET /api/v1/meetings/{meetingId}/plan`
@@ -78,11 +83,10 @@ Response body (when ready):
 }
 ```
 
-### Agentuity Integration
-- Provide a pluggable client wrapper (`AgentuityClient`) with methods:
-  - `submit_planning_job(meeting_context: MeetingContext) -> str` returning a job ID.
-  - `get_job_result(job_id: str) -> PlanningPlan | None`.
-- When Agentuity environment variables (`AGENTUITY_API_URL`, `AGENTUITY_API_KEY`) are set, real HTTP calls are issued; otherwise the client uses an in-memory stub for local testing.
+### OpenRouter Integration
+- Provide a lightweight client wrapper (`OpenRouterClient`) with a `complete(messages, ...)` helper.
+- Encapsulate the six-step prompt chain inside `OpenRouterPlanningPipeline`, ensuring each intermediary response feeds the next prompt and pulls GitHub code snippets via `GitHubCodeSearcher` when possible. Requests use a retry-capable OpenRouter client to soften transient timeouts.
+- Enforce JSON validation on the final step so the backend only persists schema-compliant plans.
 
 ### Persistence Strategy
 - Use an in-memory store (`PlanningRepository`) keyed by meeting ID.
