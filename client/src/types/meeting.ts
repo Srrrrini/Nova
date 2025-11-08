@@ -1,4 +1,5 @@
 import type { TaskNode } from './project';
+import type { PlanningPlan } from './plan';
 
 export interface MeetingSummary {
   id: string;
@@ -13,4 +14,5 @@ export interface MeetingSummary {
   cost: number;
   transcript?: string;
   prompt?: string;
+  plan?: PlanningPlan; // Full plan structure for detailed display
 }

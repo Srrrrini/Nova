@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import DependencyGraph from '../components/DependencyGraph';
 import Tabs from '../components/Tabs';
 import TaskTable from '../components/TaskTable';
+import FilesToFix from '../components/FilesToFix';
+import MeetingMinutes from '../components/MeetingMinutes';
 import { useProjectAnalysis } from '../hooks/useProjectAnalysis';
 import type { MeetingSummary } from '../types/meeting';
 import type { TaskNode } from '../types/project';
@@ -149,6 +151,24 @@ export default function Dashboard({ meetings, activeMeetingId, onSelectMeeting }
               <p className="mt-2 text-2xl font-semibold text-slate-900">${activeMeeting.cost.toLocaleString()}</p>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* Files to Fix Section */}
+      {activeMeeting?.resources && activeMeeting.resources.length > 0 && (
+        <FilesToFix files={activeMeeting.resources} meetingTitle={activeMeeting.title} />
+      )}
+
+      {/* Meeting Minutes Section */}
+      {activeMeeting?.plan && (
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">Meeting Minutes</h2>
+          <MeetingMinutes 
+            summary={activeMeeting.summary}
+            risks={activeMeeting.plan.risks}
+            milestones={activeMeeting.plan.milestones}
+            transcript={activeMeeting.transcript}
+          />
         </section>
       )}
 
