@@ -4,133 +4,85 @@ import os
 import tempfile
 from typing import Optional
 
-import httpx
 from fastapi import UploadFile
 
+try:
+    from faster_whisper import WhisperModel  # type: ignore
+except ImportError:
+    WhisperModel = None  # type: ignore
 
+
+_WHISPER_MODEL: Optional["WhisperModel"] = None
 _LANGUAGE = os.getenv("TRANSCRIPT_LANGUAGE", "en").strip() or None
+
+
+def _get_whisper_model() -> Optional["WhisperModel"]:
+    """Get or initialize the Whisper model (singleton)"""
+    global _WHISPER_MODEL
+    if WhisperModel is None:
+        return None
+    if _WHISPER_MODEL is None:
+        print("[transcription] Loading faster-whisper model (small)...")
+        _WHISPER_MODEL = WhisperModel("small", device="cpu", compute_type="int8")
+        print("[transcription] Model loaded successfully")
+    return _WHISPER_MODEL
 
 
 async def transcribe_upload(file: UploadFile) -> str:
     """
-    Transcribe an uploaded audio file using OpenAI's Whisper API via OpenRouter or Groq.
-    
-    Falls back to a local faster-whisper model if API keys are not configured.
+    Transcribe an uploaded audio file using faster-whisper (local Whisper model).
     """
 
     raw = await file.read()
     if not raw:
+        print("[transcription] No audio data received")
         return ""
 
-    # Try OpenRouter first (if OPENROUTER_API_KEY is set)
-    openrouter_key = os.getenv("OPENROUTER_API_KEY")
-    if openrouter_key:
-        try:
-            transcript = await _transcribe_with_openrouter(raw, file.filename, openrouter_key)
-            if transcript:
-                return transcript
-        except Exception as exc:
-            print(f"[transcription] OpenRouter failed: {exc}, trying fallback...")
-
-    # Try Groq as fallback (free tier available)
-    groq_key = os.getenv("GROQ_API_KEY")
-    if groq_key:
-        try:
-            transcript = await _transcribe_with_groq(raw, file.filename, groq_key)
-            if transcript:
-                return transcript
-        except Exception as exc:
-            print(f"[transcription] Groq failed: {exc}, trying local model...")
-
-    # Fall back to local faster-whisper if available
-    try:
-        from faster_whisper import WhisperModel  # type: ignore
-        transcript = await _transcribe_local(raw, file.filename)
-        if transcript:
-            return transcript
-    except ImportError:
-        pass
-    except Exception as exc:
-        print(f"[transcription] Local whisper failed: {exc}")
-
-    return (
-        "Transcription unavailable; "
-        f"{len(raw)} bytes captured. "
-        "Configure OPENROUTER_API_KEY or GROQ_API_KEY for automatic transcription."
-    )
-
-
-async def _transcribe_with_openrouter(audio_data: bytes, filename: Optional[str], api_key: str) -> str:
-    """Transcribe using OpenAI's Whisper via OpenRouter"""
-    url = "https://api.openai.com/v1/audio/transcriptions"
+    print(f"[transcription] Received {len(raw)} bytes from file: {file.filename}")
     
-    suffix = _detect_extension(filename)
-    headers = {"Authorization": f"Bearer {api_key}"}
-    
-    # Create multipart form data
-    files = {
-        "file": (f"audio{suffix}", audio_data, "audio/mpeg"),
-        "model": (None, "whisper-1"),
-    }
-    if _LANGUAGE:
-        files["language"] = (None, _LANGUAGE)
-    
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(url, headers=headers, files=files)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("text", "").strip()
-        else:
-            raise Exception(f"OpenRouter transcription failed: {response.status_code} - {response.text}")
+    model = _get_whisper_model()
+    if model is None:
+        return (
+            f"Transcription unavailable: faster-whisper not installed. "
+            f"Received {len(raw)} bytes. Install with: pip install faster-whisper"
+        )
 
-
-async def _transcribe_with_groq(audio_data: bytes, filename: Optional[str], api_key: str) -> str:
-    """Transcribe using Groq's Whisper API (free tier available)"""
-    url = "https://api.groq.com/openai/v1/audio/transcriptions"
-    
-    suffix = _detect_extension(filename)
-    headers = {"Authorization": f"Bearer {api_key}"}
-    
-    # Create multipart form data
-    files = {
-        "file": (f"audio{suffix}", audio_data, "audio/mpeg"),
-        "model": (None, "whisper-large-v3"),
-    }
-    if _LANGUAGE:
-        files["language"] = (None, _LANGUAGE)
-    
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(url, headers=headers, files=files)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("text", "").strip()
-        else:
-            raise Exception(f"Groq transcription failed: {response.status_code} - {response.text}")
-
-
-async def _transcribe_local(audio_data: bytes, filename: Optional[str]) -> str:
-    """Transcribe using local faster-whisper model"""
-    from faster_whisper import WhisperModel  # type: ignore
-    
-    model = WhisperModel("small", device="cpu", compute_type="int8")
-    suffix = _detect_extension(filename)
-    
+    # Save to temporary file
+    suffix = _detect_extension(file.filename)
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(audio_data)
+        tmp.write(raw)
         tmp.flush()
         temp_path = tmp.name
     
+    print(f"[transcription] Saved to temp file: {temp_path}")
+    
     try:
-        segments, _ = model.transcribe(
+        print(f"[transcription] Starting transcription (language={_LANGUAGE})...")
+        segments, info = model.transcribe(
             temp_path,
             language=_LANGUAGE,
             beam_size=5,
             condition_on_previous_text=False,
         )
-        text = " ".join(segment.text.strip() for segment in segments if segment.text)
-        return text.strip() if text else ""
+        
+        print(f"[transcription] Audio duration: {info.duration:.2f}s, language: {info.language}")
+        
+        text_parts = []
+        for segment in segments:
+            if segment.text:
+                text_parts.append(segment.text.strip())
+        
+        text = " ".join(text_parts)
+        print(f"[transcription] Transcription complete: {len(text)} characters")
+        
+        if text:
+            return text.strip()
+        else:
+            return "No speech detected in audio"
+            
+    except Exception as exc:
+        print(f"[transcription] Error during transcription: {exc}")
+        return f"Transcription failed: {exc}"
     finally:
         try:
             os.unlink(temp_path)

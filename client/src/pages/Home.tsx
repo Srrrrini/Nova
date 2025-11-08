@@ -48,10 +48,11 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
   const { recording, audioUrl: recordedAudioUrl, audioBlob: recordedAudioBlob, error: audioError, startRecording, stopRecording } = useAudioRecorder();
   const [defaultAudioUrl, setDefaultAudioUrl] = useState<string | null>(null);
   const [defaultAudioBlob, setDefaultAudioBlob] = useState<Blob | null>(null);
+  const [useDefaultAudio, setUseDefaultAudio] = useState(true);
   
-  // Use default audio if no recorded audio exists
-  const audioUrl = recordedAudioUrl || defaultAudioUrl;
-  const audioBlob = recordedAudioBlob || defaultAudioBlob;
+  // Use default audio by default, or recorded audio if explicitly recorded
+  const audioUrl = useDefaultAudio ? defaultAudioUrl : recordedAudioUrl;
+  const audioBlob = useDefaultAudio ? defaultAudioBlob : recordedAudioBlob;
   
   const assignedTasks = meetings.flatMap((meeting) => meeting.tasks).slice(0, 3);
   const today = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
@@ -98,7 +99,7 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
           objectUrl = URL.createObjectURL(blob);
           setDefaultAudioBlob(blob);
           setDefaultAudioUrl(objectUrl);
-          console.log('[audio] loaded default audio file');
+          console.log('[audio] loaded default audio file, size:', blob.size, 'bytes, type:', blob.type);
         }
       } catch (err) {
         console.warn('[audio] default audio file not found, will use recording:', err);
@@ -112,6 +113,14 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
       }
     };
   }, []);
+
+  // Switch to recorded audio when recording stops
+  useEffect(() => {
+    if (recordedAudioBlob && !recording) {
+      setUseDefaultAudio(false);
+      console.log('[audio] switched to recorded audio, size:', recordedAudioBlob.size, 'bytes');
+    }
+  }, [recordedAudioBlob, recording]);
 
   const handleTitleBlur = (meetingId: string, fallback: string, value?: string | null) => {
     setDraftSummaries((prev) => ({
@@ -143,12 +152,15 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
       };
 
       const form = new FormData();
-      form.append('meeting_audio', audioBlob, `meeting-${meetingId}.webm`);
+      const audioFilename = useDefaultAudio ? 'project_recording.mp3' : `meeting-${meetingId}.webm`;
+      form.append('meeting_audio', audioBlob, audioFilename);
       form.append('context', JSON.stringify(contextPayload));
 
       console.log('[meeting] submitting analysis request', {
         meetingId,
+        audioSource: useDefaultAudio ? 'default (project_recording.mp3)' : 'recorded',
         audioBytes: audioBlob.size,
+        audioType: audioBlob.type,
         context: contextPayload
       });
       const res = await fetch(`${API_BASE}/meetings/analyze`, {
@@ -222,7 +234,20 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
               </svg>
               {recording ? 'End meeting' : 'Start meeting'}
             </button>
-            {audioUrl && !recording && <span className="text-xs text-slate-500">Recording captured</span>}
+            {audioUrl && !recording && (
+              <span className="text-xs text-slate-500">
+                {useDefaultAudio ? '✓ Using default audio (3min)' : 'Using recorded audio'}
+              </span>
+            )}
+            {!useDefaultAudio && recordedAudioBlob && defaultAudioBlob && (
+              <button
+                type="button"
+                onClick={() => setUseDefaultAudio(true)}
+                className="text-xs text-blue-600 hover:text-blue-700 underline"
+              >
+                Switch to default audio
+              </button>
+            )}
             {audioUrl && !recording && (
               <button
                 type="button"
