@@ -1,0 +1,81 @@
+[
+  {
+    "id": "kickoff",
+    "title": "Go-to-Market Kickoff",
+    "date": "2024-10-01",
+    "attendees": ["Avery", "Kai", "Mina"],
+    "summary": "Aligned on GTM enablement scope and automation goals.",
+    "minutes": "Discussed Whisper ingestion for discovery calls, outlined dependencies with ops tooling, and captured PM/Design action items.",
+    "resources": ["Modal GPU hours", "GTM enablement notion doc"],
+    "hours": 42,
+    "cost": 6300,
+    "tasks": [
+      {
+        "id": "T1",
+        "name": "Ingest legacy data",
+        "description": "Map legacy ERP export to unified schema.",
+        "owner": "Ada Lovelace",
+        "depends_on": [],
+        "hours": 60,
+        "risk": "Medium",
+        "status": "in_progress"
+      },
+      {
+        "id": "T2",
+        "name": "Define agent prompts",
+        "description": "Design evaluation prompts for TaskParser and Dependency agents.",
+        "owner": "Grace Hopper",
+        "depends_on": ["T1"],
+        "hours": 40,
+        "risk": "Low",
+        "status": "pending"
+      }
+    ]
+  },
+  {
+    "id": "retro",
+    "title": "Agent Ops Sync",
+    "date": "2024-10-05",
+    "attendees": ["Elena", "Avery", "Lucas"],
+    "summary": "Reviewed staffing utilization and blockers.",
+    "minutes": "Modal deployment risks, vendor security requirements, and coverage for QA readiness were reviewed.",
+    "resources": ["Security checklist", "QA triage board"],
+    "hours": 35,
+    "cost": 5250,
+    "tasks": [
+      {
+        "id": "T3",
+        "name": "Modal deployment",
+        "description": "Ship FastAPI backend as Modal function.",
+        "owner": "Grace Hopper",
+        "depends_on": ["T1"],
+        "hours": 80,
+        "risk": "High",
+        "status": "blocked"
+      }
+    ]
+  },
+  {
+    "id": "design",
+    "title": "Design QA Jam",
+    "date": "2024-10-09",
+    "attendees": ["Mina", "Drew"],
+    "summary": "Validated dashboard UX and Gantt components.",
+    "minutes": "Walked through DAG microinteractions, timeline charts, and copy for the planner landing page.",
+    "resources": ["Figma file", "Component checklist"],
+    "hours": 24,
+    "cost": 3600,
+    "tasks": [
+      {
+        "id": "T4",
+        "name": "Timeline report UX",
+        "description": "Implement React Flow DAG with Recharts timeline.",
+        "owner": "Ada Lovelace",
+        "depends_on": ["T2"],
+        "hours": 60,
+        "risk": "Low",
+        "status": "pending"
+      }
+    ]
+  }
+]

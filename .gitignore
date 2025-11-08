@@ -1,0 +1,33 @@
+# Python virtual environments
+.venv/
+venv
+
+# Node modules
+node_modules
+
+# IDE artifacts
+.vscode/
+.idea/
+*.code-workspace
+
+# Byte-compiled / cache
+__pycache__/Yp to 
+server/__pycache__
+*.py[cod]
+.mypy_cache
+
+# Logs
+*.log
+
+# Env files
+.env
+.env.*
+
+# Generated artifacts
+.client
+.modal
+.sqlite*
+
+# OS junk
+Thumbs.db
+.DS_Store

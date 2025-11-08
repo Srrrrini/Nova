@@ -1,0 +1,32 @@
+{
+  "meetingId": "sp-2025-11-08",
+  "project": {
+    "name": "Flask 3.1 Stability Sprint",
+    "repositoryUrl": "https://github.com/pallets/flask",
+    "goal": "Improve authentication stability and documentation ahead of the 3.1 release"
+  },
+  "participants": [
+    {"name": "Alice Chen", "role": "Engineering Manager"},
+    {"name": "Bob Martinez", "role": "Backend Engineer"},
+    {"name": "Priya Patel", "role": "DevOps Engineer"},
+    {"name": "Jonas Meyer", "role": "Tech Writer"}
+  ],
+  "transcript": "Alice: Let's align on sprint focus: shipping the 3.1 authentication fixes and tightening docs. Bob: Login failures were traced to the blueprint auth middleware; we need to refactor session refresh logic in flask/sessions.py and add regression tests. Priya: Deployment playbooks still reference the legacy WSGI config—I'll update the container recipe and CI workflow. Jonas: Docs need a migration note for the new session cookie flags, plus guidance for extensions. Alice: Great. Target mid-sprint for code complete, end of sprint for release candidate. Call out risks as we go.",
+  "issues": [
+    {
+      "id": "ISSUE-123",
+      "title": "Session refresh fails on production",
+      "url": "https://github.com/pallets/flask/issues/5390"
+    },
+    {
+      "id": "ISSUE-341",
+      "title": "Update deployment docs for container workflow",
+      "url": "https://github.com/pallets/flask/issues/5143"
+    },
+    {
+      "id": "ISSUE-487",
+      "title": "Document new secure cookie defaults",
+      "url": "https://github.com/pallets/flask/issues/4910"
+    }
+  ]
+}
