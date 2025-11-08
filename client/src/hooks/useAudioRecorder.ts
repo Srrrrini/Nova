@@ -19,16 +19,19 @@ export function useAudioRecorder(): AudioRecorderState {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const mimeType = useMemo(() => pickMimeType(), []);
 
   useEffect(() => {
     return () => {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
       streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!audioUrl) return undefined;
+    return () => {
+      URL.revokeObjectURL(audioUrl);
     };
   }, [audioUrl]);
 
@@ -46,7 +49,7 @@ export function useAudioRecorder(): AudioRecorderState {
       streamRef.current = stream;
       const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
-      chunksRef.current = [];
+      const chunks: Blob[] = [];
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
         setAudioUrl(null);
@@ -54,12 +57,12 @@ export function useAudioRecorder(): AudioRecorderState {
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
+          chunks.push(event.data);
         }
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType || chunksRef.current[0]?.type || 'audio/webm' });
+        const blob = new Blob(chunks, { type: mimeType || chunks[0]?.type || 'audio/webm' });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         setRecording(false);

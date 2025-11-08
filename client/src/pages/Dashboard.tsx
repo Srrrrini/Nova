@@ -25,13 +25,13 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-col items-center gap-4 text-center">
         <div className="space-y-2">
           <p className="text-sm font-medium uppercase tracking-[0.3em] text-slate-500">Agentic planner</p>
-          <h1 className="text-4xl font-semibold text-slate-900">Plan complex launches with OpenRouter + Modal + Agentuity</h1>
-          <p className="text-slate-600">Upload raw backlog text, let the agents stitch dependencies, and export exec-ready plans.</p>
+          <h1 className="text-4xl font-semibold text-slate-900">Let agents listen, infer, and plan automatically</h1>
+          <p className="text-slate-600">Kick off a meeting recording, then paste or upload backlog notes to generate dependencies and staffing plans.</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-center gap-2">
           <button
             type="button"
             onClick={() => (recording ? stopRecording() : startRecording())}

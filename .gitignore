@@ -1,7 +1,6 @@
 node_modules
 .env
 .env.*
-dist
 .client
 server/__pycache__
 .mypy_cache
@@ -10,3 +9,9 @@ server/__pycache__
 .modal
 .sqlite*
 .DS_Store
+
+# Python virtual environment
+.venv
+
+# common alternative virtualenv folder
+venv
