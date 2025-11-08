@@ -42,3 +42,5 @@ export const meetings: MeetingSummary[] = [
     cost: 3600
   }
 ];
+
+export default meetings;

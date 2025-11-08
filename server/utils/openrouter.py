@@ -16,12 +16,12 @@ class OpenRouterClient:
         self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
         self.model = model
 
-    async def chat(self, messages: List[Dict[str, str]], **kwargs: Any) -> str:
+    async def chat(self, messages: List[Dict[str, str]], model: Optional[str] = None, **kwargs: Any) -> str:
         if not self.api_key:
             return self._offline_stub(messages)
 
         payload = {
-            'model': self.model,
+            'model': model or self.model,
             'messages': messages,
             **({'temperature': kwargs['temperature']} if 'temperature' in kwargs else {})
         }

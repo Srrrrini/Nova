@@ -1,17 +1,19 @@
-import { useState } from 'react';
-import sampleTasks from '../mock/sampleResponse';
+import { useEffect, useState } from 'react';
 import type { MeetingSummary } from '../types/meeting';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 
 interface HomeProps {
   meetings: MeetingSummary[];
   onReviewMeeting: (meetingId: string) => void;
+  onMeetingGenerated: (meeting: MeetingSummary) => void;
   onViewTasks: () => void;
 }
 
-export default function Home({ meetings, onReviewMeeting, onViewTasks }: HomeProps) {
-  const { recording, audioUrl, error: audioError, startRecording, stopRecording } = useAudioRecorder();
-  const assignedTasks = sampleTasks.tasks.slice(0, 3);
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+
+export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, onViewTasks }: HomeProps) {
+  const { recording, audioUrl, audioBlob, error: audioError, startRecording, stopRecording } = useAudioRecorder();
+  const assignedTasks = meetings.flatMap((meeting) => meeting.tasks).slice(0, 3);
   const today = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
   const [openMeeting, setOpenMeeting] = useState<MeetingSummary | null>(null);
   const [draftSummaries, setDraftSummaries] = useState<
@@ -28,6 +30,23 @@ export default function Home({ meetings, onReviewMeeting, onViewTasks }: HomePro
     }, {} as Record<string, { summary: string; minutes: string; title: string; attendees: string }>)
   );
 
+  useEffect(() => {
+    setDraftSummaries((prev) => {
+      const next = { ...prev };
+      meetings.forEach((meeting) => {
+        if (!next[meeting.id]) {
+          next[meeting.id] = {
+            summary: meeting.summary,
+            minutes: meeting.minutes,
+            title: meeting.title,
+            attendees: meeting.attendees.join(', ')
+          };
+        }
+      });
+      return next;
+    });
+  }, [meetings]);
+
   const handleTitleBlur = (meetingId: string, fallback: string, value?: string | null) => {
     setDraftSummaries((prev) => ({
       ...prev,
@@ -36,6 +55,33 @@ export default function Home({ meetings, onReviewMeeting, onViewTasks }: HomePro
         title: value?.trim() ? value : fallback
       }
     }));
+  };
+
+  const [analyzingMeeting, setAnalyzingMeeting] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  const handleAnalyzeMeeting = async () => {
+    if (!audioBlob || analyzingMeeting) return;
+    setAnalyzingMeeting(true);
+    setAnalysisError(null);
+    try {
+      const form = new FormData();
+      form.append('meeting_audio', audioBlob, 'meeting.webm');
+      const res = await fetch(`${API_BASE}/meetings/analyze`, {
+        method: 'POST',
+        body: form
+      });
+      if (!res.ok) {
+        throw new Error('Failed to analyze meeting');
+      }
+      const data = (await res.json()) as { meeting: MeetingSummary };
+      onMeetingGenerated(data.meeting);
+      onReviewMeeting(data.meeting.id);
+    } catch (err) {
+      setAnalysisError((err as Error).message);
+    } finally {
+      setAnalyzingMeeting(false);
+    }
   };
 
   const handleAttendeesBlur = (meetingId: string, fallback: string, value?: string | null) => {
@@ -85,9 +131,21 @@ export default function Home({ meetings, onReviewMeeting, onViewTasks }: HomePro
               {recording ? 'End meeting' : 'Start meeting'}
             </button>
             {audioUrl && !recording && <span className="text-xs text-slate-500">Recording captured</span>}
+            {audioUrl && !recording && (
+              <button
+                type="button"
+                onClick={handleAnalyzeMeeting}
+                disabled={!audioBlob || analyzingMeeting}
+                className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 disabled:opacity-50"
+              >
+                {analyzingMeeting && <span className="h-3 w-3 animate-spin rounded-full border border-slate-400 border-t-transparent" />}
+                {analyzingMeeting ? 'Analyzing…' : 'Analyze meeting'}
+              </button>
+            )}
           </div>
         </div>
         {audioError && <p className="mt-3 text-sm text-rose-600">{audioError}</p>}
+        {analysisError && <p className="text-sm text-rose-600">{analysisError}</p>}
         {audioUrl && !recording && (
           <audio controls className="mt-4 w-full rounded-2xl border border-slate-200 bg-slate-50 p-2">
             <source src={audioUrl} />

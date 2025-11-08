@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 interface AudioRecorderState {
   recording: boolean;
   audioUrl: string | null;
+  audioBlob: Blob | null;
   error: string | null;
   startRecording: () => Promise<void>;
   stopRecording: () => void;
@@ -17,6 +18,7 @@ const pickMimeType = () => {
 export function useAudioRecorder(): AudioRecorderState {
   const [recording, setRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -54,6 +56,7 @@ export function useAudioRecorder(): AudioRecorderState {
         URL.revokeObjectURL(audioUrl);
         setAudioUrl(null);
       }
+      setAudioBlob(null);
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -65,6 +68,7 @@ export function useAudioRecorder(): AudioRecorderState {
         const blob = new Blob(chunks, { type: mimeType || chunks[0]?.type || 'audio/webm' });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
+        setAudioBlob(blob);
         setRecording(false);
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -84,5 +88,5 @@ export function useAudioRecorder(): AudioRecorderState {
     }
   }, []);
 
-  return { recording, audioUrl, error, startRecording, stopRecording };
+  return { recording, audioUrl, audioBlob, error, startRecording, stopRecording };
 }

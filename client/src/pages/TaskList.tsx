@@ -1,14 +1,11 @@
-import { meetings } from '../mock/sampleMeetings';
 import type { TaskNode } from '../types/project';
 
-const tasks: TaskNode[] = Array.from(
-  meetings.reduce((acc, meeting) => {
-    meeting.tasks.forEach((task) => acc.set(task.id, task));
-    return acc;
-  }, new Map<string, TaskNode>()).values()
-);
+interface TaskListProps {
+  tasks: TaskNode[];
+  loading: boolean;
+}
 
-export default function TaskList() {
+export default function TaskList({ tasks, loading }: TaskListProps) {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-6">
       <header className="space-y-2 text-center lg:text-left">
@@ -16,6 +13,8 @@ export default function TaskList() {
         <h1 className="text-3xl font-semibold text-slate-900">Backlog overview</h1>
         <p className="text-slate-600">Review auto-generated tasks, dependencies, and owners.</p>
       </header>
+
+      {loading && <p className="text-sm text-slate-500">Loading tasks…</p>}
 
       <div className="grid gap-4 md:grid-cols-2">
         {tasks.map((task) => (
