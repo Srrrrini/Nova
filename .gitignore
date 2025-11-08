@@ -1,0 +1,22 @@
+# Python virtual environments
+.venv/
+
+# IDE artifacts
+.vscode/
+.idea/
+*.code-workspace
+
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+
+# Env files
+.env
+
+# OS junk
+Thumbs.db
+.DS_Store
+

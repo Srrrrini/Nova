@@ -1,0 +1,27 @@
+{
+  "meetingId": "sp-2025-11-08",
+  "project": {
+    "name": "Nova Meeting Planner",
+    "repositoryUrl": "https://github.com/example/repo",
+    "goal": "Automate sprint planning handoff"
+  },
+  "participants": [
+    { "name": "Alex Martinez", "role": "Tech Lead" },
+    { "name": "Priya Natarajan", "role": "Backend Engineer" },
+    { "name": "Leo Chen", "role": "Frontend Engineer" }
+  ],
+  "transcript": "The team discussed integrating Agentuity to summarise sprint planning meetings...",
+  "issues": [
+    {
+      "id": "GH-152",
+      "title": "Integrate sprint planning backend",
+      "url": "https://github.com/example/repo/issues/152"
+    },
+    {
+      "id": "GH-153",
+      "title": "Wire Agentuity orchestration",
+      "url": "https://github.com/example/repo/issues/153"
+    }
+  ]
+}
+

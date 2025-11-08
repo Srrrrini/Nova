@@ -1,0 +1,29 @@
+agents:
+  - id: context_summarizer
+    name: Context Summarizer
+    goal: Summarize key decisions, action items, and risks from the meeting transcript.
+    tools:
+      - transcript_chunker
+      - knowledge_base_lookup
+  - id: repo_strategist
+    name: Repo Strategist
+    goal: Map actionable items to code areas and issues in the repository.
+    tools:
+      - github_search
+      - issue_tracker
+  - id: milestone_planner
+    name: Milestone Planner
+    goal: Produce milestones, assignments, and timelines based on team roster and tasks.
+    tools:
+      - calendar_lookup
+workflow:
+  steps:
+    - agent: context_summarizer
+      provides: [summary, risks, action_items]
+    - agent: repo_strategist
+      consumes: [summary, action_items]
+      provides: [technical_tasks, code_areas, dependencies]
+    - agent: milestone_planner
+      consumes: [technical_tasks, code_areas, roster, risks]
+      provides: [milestones, assignments, timelines]
+
