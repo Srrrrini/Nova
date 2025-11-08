@@ -22,6 +22,7 @@ function App() {
               setActiveMeeting(meetingId);
               setActivePage('dashboard');
             }}
+            onViewTasks={() => setActivePage('tasks')}
           />
         )}
         {activePage === 'dashboard' && (

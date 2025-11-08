@@ -47,8 +47,8 @@ const navItems: { key: NavKey; label: string; icon: ReactNode }[] = [
 
 export default function Sidebar({ active, onSelect }: SidebarProps) {
   return (
-    <aside className="hidden w-72 flex-col justify-between border-r border-slate-200 bg-white px-6 py-8 shadow-lg lg:flex">
-      <div>
+    <aside className="hidden w-72 flex-col border-r border-slate-200 bg-white px-6 py-8 shadow-lg lg:flex">
+      <div className="flex-1">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-2xl font-bold text-slate-900">
             <span className="h-3 w-3 rounded-full bg-indigo-500" />
@@ -87,7 +87,7 @@ export default function Sidebar({ active, onSelect }: SidebarProps) {
           ))}
         </nav>
       </div>
-      <div className="rounded-3xl bg-gradient-to-r from-indigo-500 to-blue-500 p-4 text-sm text-white">
+      <div className="sticky bottom-8 rounded-3xl bg-gradient-to-r from-indigo-500 to-blue-500 p-4 text-sm text-white">
         <p className="font-semibold">Pro tip</p>
         <p className="text-xs text-indigo-50">Tap meeting titles or attendees to tweak the AI summary on the fly.</p>
       </div>

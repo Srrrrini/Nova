@@ -6,9 +6,10 @@ import { useAudioRecorder } from '../hooks/useAudioRecorder';
 interface HomeProps {
   meetings: MeetingSummary[];
   onReviewMeeting: (meetingId: string) => void;
+  onViewTasks: () => void;
 }
 
-export default function Home({ meetings, onReviewMeeting }: HomeProps) {
+export default function Home({ meetings, onReviewMeeting, onViewTasks }: HomeProps) {
   const { recording, audioUrl, error: audioError, startRecording, stopRecording } = useAudioRecorder();
   const assignedTasks = sampleTasks.tasks.slice(0, 3);
   const today = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
@@ -127,7 +128,9 @@ export default function Home({ meetings, onReviewMeeting }: HomeProps) {
       <section>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-900">Your tasks</h2>
-          <span className="text-sm text-slate-500">View all tasks →</span>
+          <button className="text-sm text-slate-500 hover:text-slate-700" onClick={onViewTasks}>
+            View all tasks →
+          </button>
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {assignedTasks.map((task) => (

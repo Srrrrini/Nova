@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DependencyGraph from '../components/DependencyGraph';
 import Tabs from '../components/Tabs';
 import TaskTable from '../components/TaskTable';
@@ -14,8 +14,29 @@ interface DashboardProps {
 
 export default function Dashboard({ meetings, activeMeetingId, onSelectMeeting }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'tasks' | 'dependencies'>('tasks');
+  const [editableMeetings, setEditableMeetings] = useState<Record<string, { title: string; attendees: string }>>(() =>
+    meetings.reduce((acc, meeting) => {
+      acc[meeting.id] = {
+        title: meeting.title,
+        attendees: meeting.attendees.join(', ')
+      };
+      return acc;
+    }, {} as Record<string, { title: string; attendees: string }>)
+  );
+  useEffect(() => {
+    setEditableMeetings((prev) => {
+      const next = { ...prev };
+      meetings.forEach((meeting) => {
+        if (!next[meeting.id]) {
+          next[meeting.id] = { title: meeting.title, attendees: meeting.attendees.join(', ') };
+        }
+      });
+      return next;
+    });
+  }, [meetings]);
   const { data: analysis, loading: analyzing } = useProjectAnalysis();
   const activeMeeting = meetings.find((meeting) => meeting.id === activeMeetingId) ?? meetings[0];
+  const meetingDraft = editableMeetings[activeMeeting?.id || ''] ?? { title: activeMeeting?.title || '', attendees: activeMeeting?.attendees.join(', ') || '' };
   const seededTasks = activeMeeting?.tasks ?? [];
   const meetingTaskIds = new Set(seededTasks.map((task) => task.id));
   const meetingAnalysisTasks = (analysis?.tasks || []).filter((task) =>
@@ -24,36 +45,80 @@ export default function Dashboard({ meetings, activeMeetingId, onSelectMeeting }
   const dependencyTasks = meetingAnalysisTasks.length ? meetingAnalysisTasks : seededTasks;
   const parsedSource = seededTasks;
 
+  const sortedMeetings = [...meetings].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
-      <header className="space-y-2 text-center">
-        <p className="text-sm font-medium uppercase tracking-[0.3em] text-slate-500">Agentic planner</p>
-        <h1 className="text-4xl font-semibold text-slate-900">{meetings.find((m) => m.id === activeMeetingId)?.title ?? 'Meeting workspace'}</h1>
-        <p className="text-slate-600">Select a meeting to inspect dependencies, tasks, and staffing outputs.</p>
-      </header>
 
-      <div className="flex flex-wrap justify-center gap-3">
-        {meetings.map((meeting) => (
-          <button
-            key={meeting.id}
-            onClick={() => onSelectMeeting(meeting.id)}
-            className={`rounded-full border px-4 py-2 text-sm ${
-              meeting.id === activeMeetingId ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'
-            }`}
-          >
-            {meeting.title}
-          </button>
-        ))}
-      </div>
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="max-h-64 overflow-y-auto rounded-2xl border border-slate-100">
+          <table className="min-w-full text-left text-sm">
+            <thead className="sticky top-0 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Meeting</th>
+                <th className="px-4 py-3">Attendees</th>
+                <th className="px-4 py-3">Hours</th>
+                <th className="px-4 py-3">Cost</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sortedMeetings.map((meeting) => (
+                <tr
+                  key={meeting.id}
+                  className={`cursor-pointer transition hover:bg-slate-50 ${
+                    meeting.id === activeMeetingId ? 'bg-slate-900/5' : ''
+                  }`}
+                  onClick={() => onSelectMeeting(meeting.id)}
+                >
+                  <td className="px-4 py-3 text-xs text-slate-500">{meeting.date}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-slate-900">
+                    {editableMeetings[meeting.id]?.title || meeting.title}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500">
+                    {editableMeetings[meeting.id]?.attendees || meeting.attendees.join(', ')}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-700">{meeting.hours}</td>
+                  <td className="px-4 py-3 text-sm text-slate-700">${meeting.cost.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
      {activeMeeting && (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Meeting overview</p>
-              <h2 className="text-2xl font-semibold text-slate-900">{activeMeeting.title}</h2>
-              <p className="text-sm text-slate-500">
-                {activeMeeting.date} • {activeMeeting.attendees.join(', ')}
+              <h2
+                className="text-2xl font-semibold text-slate-900"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(event) => {
+                  const value = event.currentTarget.textContent?.trim() || activeMeeting.title;
+                  setEditableMeetings((prev) => ({
+                    ...prev,
+                    [activeMeeting.id]: { ...prev[activeMeeting.id], title: value }
+                  }));
+                }}
+              >
+                {meetingDraft.title}
+              </h2>
+              <p
+                className="text-sm text-slate-500"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(event) => {
+                  const value = event.currentTarget.textContent?.trim() || activeMeeting.attendees.join(', ');
+                  setEditableMeetings((prev) => ({
+                    ...prev,
+                    [activeMeeting.id]: { ...prev[activeMeeting.id], attendees: value }
+                  }));
+                }}
+              >
+                {activeMeeting.date} • {meetingDraft.attendees}
               </p>
             </div>
             <div className="rounded-full border border-slate-200 px-4 py-2 text-xs text-slate-600">
