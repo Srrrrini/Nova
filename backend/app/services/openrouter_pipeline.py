@@ -60,7 +60,8 @@ class OpenRouterPlanningPipeline:
                       "owner": string | null,   // participant responsible or null
                       "areas": [string, ...],   // relevant repository files/directories/issues
                       "etaDays": integer | null,
-                      "notes": string | null
+                      "notes": string | null,
+                      "dependsOn": [string, ...] // array of task titles this task depends on (use exact title from other tasks)
                     }}
                   ]
                 }}
@@ -74,6 +75,7 @@ class OpenRouterPlanningPipeline:
             - Generate at least three milestones covering discovery, implementation, QA/deployment/documentation.
             - Each milestone must contain at least two tasks. Tasks must map to code areas using the repository context.
             - Prefer the participant most suited to own each task (use their role as a hint).
+            - Identify task dependencies: "dependsOn" should list exact task titles that must be completed first. Use empty array [] if no dependencies.
             - Use null only when the information cannot be inferred.
 
             Project:

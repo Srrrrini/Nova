@@ -29,6 +29,7 @@ export interface PlanningTask {
   areas?: string[];
   etaDays?: number | null;
   notes?: string | null;
+  dependsOn?: string[];
 }
 
 export interface PlanningMilestone {

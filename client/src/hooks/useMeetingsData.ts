@@ -26,7 +26,16 @@ export function useMeetingsData() {
   }, []);
 
   const addMeeting = useCallback((meeting: MeetingSummary) => {
-    setMeetings((prev) => [...prev, meeting]);
+    setMeetings((prev) => {
+      // Check if meeting already exists (by ID), if so update it, otherwise prepend
+      const existingIndex = prev.findIndex((m) => m.id === meeting.id);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = meeting;
+        return updated;
+      }
+      return [meeting, ...prev]; // Prepend new meetings to show at top
+    });
     setTasks((prev) => {
       const map = new Map(prev.map((task) => [task.id, task]));
       meeting.tasks.forEach((task) => map.set(task.id, task));

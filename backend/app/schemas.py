@@ -47,6 +47,10 @@ class TaskAssignment(BaseModel):
     )
     etaDays: Optional[int] = Field(None, description="Estimated number of days to complete the task")
     notes: Optional[str] = Field(None, description="Additional implementation details or links")
+    dependsOn: List[str] = Field(
+        default_factory=list,
+        description="List of task titles this task depends on (must be completed first)",
+    )
 
 
 class Milestone(BaseModel):

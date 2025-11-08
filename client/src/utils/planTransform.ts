@@ -72,25 +72,48 @@ function convertTasks(meetingId: string, plan: PlanningPlan): TaskNode[] {
   const risks = plan.risks;
   const defaultRisk = risks[0] || 'Unspecified risk';
 
-  return plan.milestones.flatMap((milestone, milestoneIndex) =>
-    milestone.tasks.map((task, taskIndex) => {
+  // First pass: create all tasks and build a title-to-id map
+  const titleToIdMap = new Map<string, string>();
+  const tasks: TaskNode[] = [];
+  
+  plan.milestones.forEach((milestone, milestoneIndex) => {
+    milestone.tasks.forEach((task, taskIndex) => {
       const id = `${meetingId}-task-${milestoneIndex}-${taskIndex}`;
+      titleToIdMap.set(task.title, id);
+      
       const hours = Math.max(
         2,
         Math.round((task.etaDays ?? 1) * DEFAULT_HOURS_PER_DAY)
       );
-      return {
+      
+      tasks.push({
         id,
         name: task.title,
         description: task.notes || milestone.title,
         owner: task.owner || 'Unassigned',
-        depends_on: [],
+        depends_on: [], // Will be filled in second pass
         hours,
         risk: risks[taskIndex % risks.length] || defaultRisk,
         status: 'pending'
-      } satisfies TaskNode;
-    })
-  );
+      });
+    });
+  });
+
+  // Second pass: resolve dependencies using the title-to-id map
+  let taskIndex = 0;
+  plan.milestones.forEach((milestone) => {
+    milestone.tasks.forEach((task) => {
+      if (task.dependsOn && task.dependsOn.length > 0) {
+        const resolvedDeps = task.dependsOn
+          .map((depTitle) => titleToIdMap.get(depTitle))
+          .filter((depId): depId is string => depId !== undefined);
+        tasks[taskIndex].depends_on = resolvedDeps;
+      }
+      taskIndex++;
+    });
+  });
+
+  return tasks;
 }
 
 function formatMinutes(plan: PlanningPlan): string {

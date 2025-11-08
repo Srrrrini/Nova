@@ -14,33 +14,31 @@ interface HomeProps {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const DEFAULT_PROJECT = {
-  name: 'Flask 3.1 Stability Sprint',
-  repositoryUrl: 'https://github.com/pallets/flask',
-  goal: 'Improve authentication stability and documentation ahead of the 3.1 release'
+  name: 'Nova Sprint 13',
+  repositoryUrl: 'https://github.com/your-org/nova',
+  goal: 'Migrate to SQLite storage, implement Redis caching for GitHub API, and improve OpenRouter timeout handling'
 };
 
 const DEFAULT_PARTICIPANTS = [
-  { name: 'Alice Chen', role: 'Engineering Manager' },
-  { name: 'Bob Martinez', role: 'Backend Engineer' },
-  { name: 'Priya Patel', role: 'DevOps Engineer' },
-  { name: 'Jonas Meyer', role: 'Technical Writer' }
+  { name: 'Srinivas', role: 'Engineering Manager' },
+  { name: 'Dan', role: 'Backend Engineer' }
 ];
 
 const DEFAULT_ISSUES = [
   {
-    id: 'ISSUE-123',
-    title: 'Session refresh fails on production',
-    url: 'https://github.com/pallets/flask/issues/5390'
+    id: 'NOVA-134',
+    title: 'Migrate meeting plans and analysis history to SQLite',
+    url: 'https://github.com/your-org/nova/issues/134'
   },
   {
-    id: 'ISSUE-341',
-    title: 'Update deployment docs for container workflow',
-    url: 'https://github.com/pallets/flask/issues/5143'
+    id: 'NOVA-135',
+    title: 'Add Redis caching for GitHub code search to reduce API rate limiting',
+    url: 'https://github.com/your-org/nova/issues/135'
   },
   {
-    id: 'ISSUE-487',
-    title: 'Document new secure cookie defaults',
-    url: 'https://github.com/pallets/flask/issues/4910'
+    id: 'NOVA-137',
+    title: 'Improve OpenRouter timeout handling with retry logic and better error messages',
+    url: 'https://github.com/your-org/nova/issues/137'
   }
 ];
 
