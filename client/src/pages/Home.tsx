@@ -3,6 +3,8 @@ import type { MeetingSummary } from '../types/meeting';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import type { MeetingContextPayload, PlanningResponse } from '../types/plan';
 import { planResponseToMeeting } from '../utils/planTransform';
+import FilesToFix from '../components/FilesToFix';
+import MeetingMinutes from '../components/MeetingMinutes';
 
 interface HomeProps {
   meetings: MeetingSummary[];
@@ -15,7 +17,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const DEFAULT_PROJECT = {
   name: 'Nova Sprint 13',
-  repositoryUrl: 'https://github.com/your-org/nova',
+  repositoryUrl: 'https://github.com/Srrrrini/Nova',
   goal: 'Migrate to SQLite storage, implement Redis caching for GitHub API, and improve OpenRouter timeout handling'
 };
 
@@ -268,6 +270,11 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
         )}
       </section>
 
+      {/* Files to Fix Section */}
+      {meetings.length > 0 && meetings[0].resources && (
+        <FilesToFix files={meetings[0].resources} meetingTitle={meetings[0].title} />
+      )}
+
       <section>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-900">Recent meetings</h2>
@@ -349,41 +356,14 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
                   </button>
                 </div>
                 <div className="mt-4 space-y-4">
-                  <label className="block text-sm font-medium text-slate-600">
-                    Summary
-                    <textarea
-                      className="mt-1 w-full rounded-2xl border border-slate-200 p-3 text-sm"
-                      rows={3}
-                      value={draftSummaries[meetingId]?.summary}
-                      onChange={(event) =>
-                        setDraftSummaries((prev) => ({
-                          ...prev,
-                          [meetingId]: { ...prev[meetingId], summary: event.target.value }
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-slate-600">
-                    Meeting minutes
-                    <textarea
-                      className="mt-1 w-full rounded-2xl border border-slate-200 p-3 text-sm"
-                      rows={4}
-                      value={draftSummaries[meetingId]?.minutes}
-                      onChange={(event) =>
-                        setDraftSummaries((prev) => ({
-                          ...prev,
-                          [meetingId]: { ...prev[meetingId], minutes: event.target.value }
-                        }))
-                      }
-                    />
-                  </label>
+                  {/* Meeting Minutes with structured display */}
+                  <MeetingMinutes 
+                    summary={draftSummaries[meetingId]?.summary || openMeeting.summary}
+                    risks={openMeeting.plan?.risks}
+                    milestones={openMeeting.plan?.milestones}
+                    transcript={openMeeting.transcript}
+                  />
 
-                  {openMeeting.transcript && (
-                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-sm text-slate-600">
-                      <p className="font-semibold text-slate-500">Transcript</p>
-                      <p className="mt-2 whitespace-pre-wrap text-slate-600">{openMeeting.transcript}</p>
-                    </div>
-                  )}
                   {openMeeting.prompt && (
                     <details className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
                       <summary className="cursor-pointer font-semibold text-slate-500">
@@ -394,14 +374,6 @@ export default function Home({ meetings, onReviewMeeting, onMeetingGenerated, on
                       </pre>
                     </details>
                   )}
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
-                    <p className="font-semibold text-slate-500">Tasks linked</p>
-                    <ul className="mt-1 list-disc pl-4">
-                      {openMeeting.tasks.map((task) => (
-                        <li key={task.id}>{task.name}</li>
-                      ))}
-                    </ul>
-                  </div>
                 </div>
                 <div className="mt-6 flex flex-wrap justify-end gap-3 text-sm">
                   <button className="rounded-full border border-slate-200 px-4 py-2" onClick={() => setOpenMeeting(null)}>

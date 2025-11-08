@@ -40,7 +40,8 @@ export function planResponseToMeeting(
     hours: totalHours,
     cost: totalCost,
     transcript: transcript || undefined,
-    prompt: response.prompt ?? undefined
+    prompt: response.prompt ?? undefined,
+    plan: response.plan // Include full plan structure
   };
 }
 
